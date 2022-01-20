@@ -63,7 +63,8 @@ def post_create(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect(reverse_lazy('posts:profile', args=(request.user.username,)))
+            return redirect(reverse_lazy('posts:profile',
+                                         args=(request.user.username,)))
         else:
             return render(request, 'posts/create_post.html', context)
     return render(request, 'posts/create_post.html', context)
@@ -71,7 +72,7 @@ def post_create(request):
 
 @login_required
 def post_edit(request, post_id):
-    post = get_object_or_404(Post,id=post_id)
+    post = get_object_or_404(Post, id=post_id)
     form = PostForm(instance=post)
     if post.author == request.user:
         if request.method == "POST":
@@ -82,5 +83,5 @@ def post_edit(request, post_id):
                 post.save()
                 return redirect('posts:post_detail', post_id)
 
-    return render(request, 'posts/create_post.html', {'is_edit': True, 'form': form, })
-
+    return render(request, 'posts/create_post.html',
+                  {'is_edit': True, 'form': form, })
