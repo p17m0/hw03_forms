@@ -12,34 +12,24 @@
                 {% endif %}
               </div>
               <div class="card-body">
-                <form method="post">
+                <form action=""  method="post">
                   {% csrf_token %}
-                  <input type="hidden" name="csrfmiddlewaretoken" value="">            
+                  {% for field in form %}
                   <div class="form-group row my-3 p-3">
-                    <label for="id_text">
-                      <span class="required text-danger" >*</span>                  
+                    <label for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                      {% if field.field.required %}
+                        <span class="required text-danger" >*</span>
+                      {% endif %}
                     </label>
-                    <textarea name="text" cols="40" rows="10" class="form-control" required id="id_text">
-                      {{ post.text }}
-                    </textarea>                
-                    <small id="id_text-help" class="form-text text-muted">
-                      Текст нового поста
-                    </small>                  
-                  </div>
-                  {% if post.group %}
-                  <div class="form-group row my-3 p-3">
-                    <label for="id_group">
-                      Group                  
-                    </label>
-                    <select name="group" class="form-control" id="id_group">
-                      <option value="" selected> {{ post.group }} </option>
-                      <option value="1">Группа: </option>
-                    </select>
-                    <small id="id_group-help" class="form-text text-muted">
-                      Группа, к которой будет относиться пост
+                    {{ field }}
+                    {% if field.help_text %}
+                    <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
+                      {{ field.help_text|safe }}
                     </small>
+                    {% endif %}
                   </div>
-                  {% endif %}
+                  {% endfor %}
                   <div class="d-flex justify-content-end">
                     <button type="submit" class="save btn btn-default">
                       {% if is_edit %}

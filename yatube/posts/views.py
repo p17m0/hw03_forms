@@ -2,99 +2,85 @@ from django.shortcuts import render, get_object_or_404, redirect
 
 from django.core.paginator import Paginator
 
-from .models import Group, Post
+from django.urls import reverse_lazy
+
+from .models import Group, Post, User
 
 from django.contrib.auth.decorators import login_required
 
 from .forms import PostForm
 
-from datetime import timezone
 
-
-@login_required
-def index(request):
-    posts = Post.objects.all()[:10]
+def pagina(request, posts):
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    return page_obj
+
+
+def index(request):
+    posts = Post.objects.all()
     context = {
-        'page_obj': page_obj,
+        'page_obj': pagina(request, posts),
     }
     return render(request, 'posts/index.html', context)
 
 
-@login_required
 def posts_group(request, slug):
-    # Функция get_object_or_404 получает по заданным критериям объект
-    # из базы данных или возвращает сообщение об ошибке, если объект не найден.
-    # В нашем случае в переменную group будут переданы объекты модели Group,
-    # поле slug у которых соответствует значению slug в запросе
     group = get_object_or_404(Group, slug=slug)
-    posts = group.posts.all()[:10]
+    posts = group.posts.all()
     context = {
         'group': group,
-        'posts': posts,
+        'page_obj': pagina(request, posts),
     }
     return render(request, 'posts/group_list.html', context)
 
 
-@login_required
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    paginator = Paginator(author, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    posts = author.posts.all()
     context = {
         'author': author,
-        'page_obj': page_obj,
+        'page_obj': pagina(request, posts),
     }
     return render(request, 'posts/profile.html', context)
 
 
-@login_required
 def post_detail(request, post_id):
-    group = get_object_or_404(Group, post_id=post_id)
-    posts = group.posts.all()[:10]
+    post = get_object_or_404(Post, pk=post_id)
     context = {
-        'group': group,
-        'posts': posts,
+        'post': post,
     }
     return render(request, 'posts/post_detail.html', context)
 
 
 @login_required
 def post_create(request):
+    form = PostForm(request.POST or None)
+    context = {'form': form}
     if request.method == "POST":
-        form = PostForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
-            post.published_date = timezone.now()
             post.save()
-            return redirect('post:profile', pk=post.pk)
-    else:
-        form = PostForm()
-        context = {'form': form}
+            return redirect(reverse_lazy('posts:profile', args=(request.user.username,)))
+        else:
+            return render(request, 'posts/create_post.html', context)
     return render(request, 'posts/create_post.html', context)
 
 
 @login_required
-def post_edit(request):
-    post = get_object_or_404(Post, post_id=post_id)
-    if post.author != request.user:
-        return redirect('post_detail', pk=post.pk)
-    form = PostForm(request.Post)
-    context = {
-        'is_edit': True,
-        'form': form,
-    }
-    if request.method == "POST":
-        form = PostForm(request.POST)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.published_date = timezone.now()
-            post.save()
-            return redirect('post_detail', pk=post.pk)
-    return render(request, 'posts/create_post.html', context)
+def post_edit(request, post_id):
+    post = get_object_or_404(Post,id=post_id)
+    form = PostForm(instance=post)
+    if post.author == request.user:
+        if request.method == "POST":
+            form = PostForm(request.POST, instance=post)
+            if form.is_valid():
+                post = form.save(commit=False)
+                post.author = request.user
+                post.save()
+                return redirect('posts:post_detail', post_id)
+
+    return render(request, 'posts/create_post.html', {'is_edit': True, 'form': form, })
 

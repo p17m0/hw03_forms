@@ -1,6 +1,7 @@
 from django.db import models
 
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -29,6 +30,10 @@ class Post(models.Model):
         on_delete=models.SET_NULL,
         related_name='posts'
     )
+
+    def get_absolute_url(self):
+        return reverse('post', kwargs={'slug':self.slug})
+
 
     class Meta:
         ordering = ['-pub_date']
