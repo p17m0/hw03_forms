@@ -31,8 +31,8 @@ class Post(models.Model):
         related_name='posts'
     )
 
-    def get_absolute_url(self):
-        return reverse('post', kwargs={'slug': self.slug})
-
     class Meta:
         ordering = ['-pub_date']
+
+    def get_absolute_url(self):
+        return reverse('post', kwargs={'slug': self.slug})

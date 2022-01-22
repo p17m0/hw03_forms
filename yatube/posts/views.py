@@ -1,18 +1,14 @@
-from django.shortcuts import render, get_object_or_404, redirect
-
-from django.core.paginator import Paginator
-
-from django.urls import reverse_lazy
-
-from .models import Group, Post, User
-
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, redirect, render
+from yatube.settings import QUANTITY
 
 from .forms import PostForm
+from .models import Group, Post, User
 
 
 def pagina(request, posts):
-    paginator = Paginator(posts, 10)
+    paginator = Paginator(posts, QUANTITY)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     return page_obj
@@ -58,30 +54,22 @@ def post_detail(request, post_id):
 def post_create(request):
     form = PostForm(request.POST or None)
     context = {'form': form}
-    if request.method == "POST":
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.save()
-            return redirect(reverse_lazy('posts:profile',
-                                         args=(request.user.username,)))
-        else:
-            return render(request, 'posts/create_post.html', context)
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect('posts:profile', request.user.username)
     return render(request, 'posts/create_post.html', context)
 
 
 @login_required
 def post_edit(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    form = PostForm(instance=post)
-    if post.author == request.user:
-        if request.method == "POST":
-            form = PostForm(request.POST, instance=post)
-            if form.is_valid():
-                post = form.save(commit=False)
-                post.author = request.user
-                post.save()
-                return redirect('posts:post_detail', post_id)
-
+    form = PostForm(request.POST or None, instance=post)
+    if post.author == request.user and form.is_valid():
+        form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect('posts:post_detail', post_id)
     return render(request, 'posts/create_post.html',
                   {'is_edit': True, 'form': form, })
