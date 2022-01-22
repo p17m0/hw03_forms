@@ -13,4 +13,5 @@ class PostForm(forms.ModelForm):
         }
         help_texts = {
             'text': ('Внесите текст какой-нибудь текст:'),
+            'group': ('Выберите группу:'),
         }
